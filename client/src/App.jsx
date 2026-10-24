@@ -51,9 +51,8 @@ export default function App() {
       setCalendarData(calendarRes);
       setHeatmapData(heatmapRes);
       setMonthlyGoal(goalRes);
-    } catch (err) {
-      console.error('Failed to load tracker data:', err);
-      setError('Unable to connect to the Study Tracker SQLite API server.');
+    } catch {
+      setError('Unable to load tracker data.');
     } finally {
       setIsLoading(false);
     }

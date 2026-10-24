@@ -63,8 +63,8 @@ export default function PomodoroTimer({
       gain.connect(audioCtx.destination);
       osc.start();
       osc.stop(audioCtx.currentTime + 0.6);
-    } catch (e) {
-      console.warn('Audio not allowed or supported', e);
+    } catch {
+      // Audio not allowed or supported
     }
   };
 

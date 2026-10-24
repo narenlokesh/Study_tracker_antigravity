@@ -39,8 +39,8 @@ function cleanupOrphanedSessions() {
     if (filtered.length !== sess.length) {
       localStorage.setItem(STORAGE_KEYS.SESSIONS, JSON.stringify(filtered));
     }
-  } catch (e) {
-    console.error('Error cleaning up orphaned sessions:', e);
+  } catch {
+    // Ignore cleanup error
   }
 }
 
@@ -358,8 +358,7 @@ async function request(endpoint, options = {}, fallbackFn) {
       throw new Error(`Server returned ${response.status}`);
     }
     return await response.json();
-  } catch (error) {
-    console.warn(`Backend unreachable on ${endpoint}, falling back to browser storage.`, error);
+  } catch {
     return fallbackFn();
   }
 }
