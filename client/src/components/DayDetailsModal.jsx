@@ -23,6 +23,7 @@ export default function DayDetailsModal({
   onClose, 
   sessions = [], 
   onDeleteSession, 
+  onDeleteAllSessionsForDate,
   onAddSessionForDate 
 }) {
   if (!dateStr) return null;
@@ -78,16 +79,16 @@ export default function DayDetailsModal({
             sessions.map((session) => (
               <div
                 key={session.id}
-                className="p-3.5 bg-slate-950/80 border border-slate-800/90 rounded-2xl relative group hover:border-slate-700 transition"
+                className="p-3.5 bg-slate-950/80 border border-slate-800/90 rounded-2xl relative hover:border-slate-700 transition"
               >
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-2.5">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-2.5 min-w-0">
                     <span
-                      className="w-3.5 h-3.5 rounded-full shadow-sm"
+                      className="w-3.5 h-3.5 rounded-full shadow-sm shrink-0"
                       style={{ backgroundColor: session.subject_color }}
                     />
-                    <div>
-                      <h4 className="font-bold text-sm text-slate-200">
+                    <div className="min-w-0">
+                      <h4 className="font-bold text-sm text-slate-200 truncate">
                         {session.subject_name}
                       </h4>
                       <div className="flex items-center gap-2 mt-0.5">
@@ -103,17 +104,18 @@ export default function DayDetailsModal({
                     </div>
                   </div>
 
-                  {/* Delete session button */}
+                  {/* Delete session button - permanently visible & accessible */}
                   <button
                     onClick={() => {
-                      if (confirm('Delete this study log entry?')) {
+                      if (confirm(`Delete this ${formatMinutes(session.duration_minutes)} session for ${session.subject_name}?`)) {
                         onDeleteSession(session.id);
                       }
                     }}
-                    className="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-950/30 transition opacity-0 group-hover:opacity-100"
+                    className="p-1.5 px-2.5 rounded-xl text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 transition shrink-0 flex items-center gap-1.5 text-xs font-semibold"
                     title="Delete session"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Trash2 className="w-3.5 h-3.5 text-rose-400" />
+                    <span>Delete</span>
                   </button>
                 </div>
 
@@ -133,14 +135,30 @@ export default function DayDetailsModal({
         </div>
 
         {/* Footer actions */}
-        <div className="pt-4 mt-4 border-t border-slate-800 flex items-center justify-between">
-          <button
-            onClick={() => onAddSessionForDate(dateStr)}
-            className="flex items-center gap-2 px-4 py-2 text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl shadow-md shadow-emerald-600/20 transition transform active:scale-95"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Add Session to {dateStr}</span>
-          </button>
+        <div className="pt-4 mt-4 border-t border-slate-800 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => onAddSessionForDate(dateStr)}
+              className="flex items-center gap-2 px-4 py-2 text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl shadow-md shadow-emerald-600/20 transition transform active:scale-95"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Add Session</span>
+            </button>
+
+            {sessions.length > 0 && (
+              <button
+                onClick={() => {
+                  if (confirm(`Delete ALL ${sessions.length} sessions logged on ${dateStr}?`)) {
+                    onDeleteAllSessionsForDate(dateStr);
+                  }
+                }}
+                className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 rounded-xl transition"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Delete All</span>
+              </button>
+            )}
+          </div>
 
           <button
             onClick={onClose}

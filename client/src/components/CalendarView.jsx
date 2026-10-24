@@ -5,6 +5,7 @@ import {
   Calendar as CalendarIcon, 
   Clock, 
   Plus, 
+  Trash2,
   CheckCircle,
   Filter,
   Sparkles
@@ -32,7 +33,8 @@ export default function CalendarView({
   subjects,
   onMonthChange, 
   onSelectDate, 
-  onQuickAddSession 
+  onQuickAddSession,
+  onDeleteDay
 }) {
   const currentYear = currentDate.getFullYear();
   const currentMonth = currentDate.getMonth() + 1; // 1-12
@@ -210,7 +212,7 @@ export default function CalendarView({
                   totalMinutes
                 )} ${isToday ? 'ring-2 ring-emerald-400 ring-offset-2 ring-offset-slate-950' : ''}`}
               >
-                {/* Cell Header: Day Number + Quick Add */}
+                {/* Cell Header: Day Number + Quick Actions */}
                 <div className="flex items-center justify-between">
                   <span
                     className={`text-xs font-bold w-6 h-6 rounded-lg flex items-center justify-center transition-all ${
@@ -224,17 +226,35 @@ export default function CalendarView({
                     {dayNum}
                   </span>
 
-                  {/* Hover Quick Add Action Button */}
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onQuickAddSession(dateStr);
-                    }}
-                    className="opacity-0 group-hover:opacity-100 p-1 rounded-md bg-slate-800 hover:bg-emerald-600 text-slate-300 hover:text-white transition shadow-sm"
-                    title={`Log study session for ${dateStr}`}
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                  </button>
+                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition">
+                    {/* Quick Add Action Button */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onQuickAddSession(dateStr);
+                      }}
+                      className="p-1 rounded-md bg-slate-800 hover:bg-emerald-600 text-slate-300 hover:text-white transition shadow-sm"
+                      title={`Log study session for ${dateStr}`}
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                    </button>
+
+                    {/* Quick Delete Day Action Button */}
+                    {totalMinutes > 0 && onDeleteDay && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (confirm(`Delete all study logs for ${dateStr}?`)) {
+                            onDeleteDay(dateStr);
+                          }
+                        }}
+                        className="p-1 rounded-md bg-slate-800 hover:bg-rose-600 text-slate-300 hover:text-white transition shadow-sm"
+                        title={`Delete all logs for ${dateStr}`}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 {/* Center / Study Duration Badge */}

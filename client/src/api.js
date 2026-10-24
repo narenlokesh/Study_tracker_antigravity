@@ -21,8 +21,34 @@ const STORAGE_KEYS = {
   GOALS: 'focustrack_goals',
 };
 
+// Automatic cleanup: Remove sessions whose subjects have been deleted
+function cleanupOrphanedSessions() {
+  try {
+    const subsRaw = localStorage.getItem(STORAGE_KEYS.SUBJECTS);
+    if (!subsRaw) return;
+    const subs = JSON.parse(subsRaw);
+    if (!Array.isArray(subs)) return;
+    const validSubjectIds = new Set(subs.map(s => String(s.id)));
+
+    const sessRaw = localStorage.getItem(STORAGE_KEYS.SESSIONS);
+    if (!sessRaw) return;
+    const sess = JSON.parse(sessRaw);
+    if (!Array.isArray(sess)) return;
+
+    const filtered = sess.filter(s => validSubjectIds.has(String(s.subject_id)));
+    if (filtered.length !== sess.length) {
+      localStorage.setItem(STORAGE_KEYS.SESSIONS, JSON.stringify(filtered));
+    }
+  } catch (e) {
+    console.error('Error cleaning up orphaned sessions:', e);
+  }
+}
+
 function initLocalDataIfEmpty() {
-  if (localStorage.getItem(STORAGE_KEYS.SUBJECTS)) return;
+  if (localStorage.getItem(STORAGE_KEYS.SUBJECTS)) {
+    cleanupOrphanedSessions();
+    return;
+  }
 
   const initialSubjects = [
     { id: 1, name: 'Computer Science & Algorithms', color: '#3b82f6', icon: 'Code', target_hours_per_week: 10 },
@@ -86,10 +112,13 @@ function initLocalDataIfEmpty() {
 const localApi = {
   getSubjects: () => {
     initLocalDataIfEmpty();
+    cleanupOrphanedSessions();
     const subs = JSON.parse(localStorage.getItem(STORAGE_KEYS.SUBJECTS) || '[]');
     const sess = JSON.parse(localStorage.getItem(STORAGE_KEYS.SESSIONS) || '[]');
     return subs.map(s => {
-      const total_minutes = sess.filter(x => x.subject_id === s.id).reduce((sum, x) => sum + x.duration_minutes, 0);
+      const total_minutes = sess
+        .filter(x => String(x.subject_id) === String(s.id))
+        .reduce((sum, x) => sum + x.duration_minutes, 0);
       return { ...s, total_minutes };
     });
   },
@@ -103,27 +132,53 @@ const localApi = {
   },
   updateSubject: (id, data) => {
     const subs = JSON.parse(localStorage.getItem(STORAGE_KEYS.SUBJECTS) || '[]');
-    const idx = subs.findIndex(s => s.id === Number(id));
+    const idx = subs.findIndex(s => String(s.id) === String(id));
     if (idx !== -1) {
       subs[idx] = { ...subs[idx], ...data };
       localStorage.setItem(STORAGE_KEYS.SUBJECTS, JSON.stringify(subs));
+
+      // Also update subject_name and color in sessions
+      let sess = JSON.parse(localStorage.getItem(STORAGE_KEYS.SESSIONS) || '[]');
+      sess = sess.map(s => {
+        if (String(s.subject_id) === String(id)) {
+          return {
+            ...s,
+            subject_name: data.name || s.subject_name,
+            subject_color: data.color || s.subject_color
+          };
+        }
+        return s;
+      });
+      localStorage.setItem(STORAGE_KEYS.SESSIONS, JSON.stringify(sess));
+
       return subs[idx];
     }
     return null;
   },
   deleteSubject: (id) => {
+    // 1. Remove subject
     let subs = JSON.parse(localStorage.getItem(STORAGE_KEYS.SUBJECTS) || '[]');
-    subs = subs.filter(s => s.id !== Number(id));
+    subs = subs.filter(s => String(s.id) !== String(id));
     localStorage.setItem(STORAGE_KEYS.SUBJECTS, JSON.stringify(subs));
+
+    // 2. Cascade delete: remove all sessions that belonged to this subject!
+    let sess = JSON.parse(localStorage.getItem(STORAGE_KEYS.SESSIONS) || '[]');
+    sess = sess.filter(s => String(s.subject_id) !== String(id));
+    localStorage.setItem(STORAGE_KEYS.SESSIONS, JSON.stringify(sess));
+
     return { success: true };
   },
   getSessions: (params = {}) => {
     initLocalDataIfEmpty();
+    cleanupOrphanedSessions();
     let sess = JSON.parse(localStorage.getItem(STORAGE_KEYS.SESSIONS) || '[]');
     if (params.month && params.year) {
       const padM = String(params.month).padStart(2, '0');
       const prefix = `${params.year}-${padM}`;
       sess = sess.filter(s => s.date.startsWith(prefix));
+    }
+    if (params.subjectId) {
+      sess = sess.filter(s => String(s.subject_id) === String(params.subjectId));
     }
     return sess.sort((a, b) => b.date.localeCompare(a.date));
   },
@@ -131,7 +186,7 @@ const localApi = {
     initLocalDataIfEmpty();
     const subs = JSON.parse(localStorage.getItem(STORAGE_KEYS.SUBJECTS) || '[]');
     const sess = JSON.parse(localStorage.getItem(STORAGE_KEYS.SESSIONS) || '[]');
-    const sub = subs.find(s => s.id === Number(data.subject_id)) || {};
+    const sub = subs.find(s => String(s.id) === String(data.subject_id)) || {};
     const newSession = {
       id: Date.now(),
       ...data,
@@ -145,7 +200,7 @@ const localApi = {
   },
   updateSession: (id, data) => {
     const sess = JSON.parse(localStorage.getItem(STORAGE_KEYS.SESSIONS) || '[]');
-    const idx = sess.findIndex(s => s.id === Number(id));
+    const idx = sess.findIndex(s => String(s.id) === String(id));
     if (idx !== -1) {
       sess[idx] = { ...sess[idx], ...data };
       localStorage.setItem(STORAGE_KEYS.SESSIONS, JSON.stringify(sess));
@@ -155,12 +210,19 @@ const localApi = {
   },
   deleteSession: (id) => {
     let sess = JSON.parse(localStorage.getItem(STORAGE_KEYS.SESSIONS) || '[]');
-    sess = sess.filter(s => s.id !== Number(id));
+    sess = sess.filter(s => String(s.id) !== String(id));
+    localStorage.setItem(STORAGE_KEYS.SESSIONS, JSON.stringify(sess));
+    return { success: true };
+  },
+  deleteSessionsByDate: (dateStr) => {
+    let sess = JSON.parse(localStorage.getItem(STORAGE_KEYS.SESSIONS) || '[]');
+    sess = sess.filter(s => s.date !== dateStr);
     localStorage.setItem(STORAGE_KEYS.SESSIONS, JSON.stringify(sess));
     return { success: true };
   },
   getCalendarData: (year, month) => {
     initLocalDataIfEmpty();
+    cleanupOrphanedSessions();
     const padM = String(month).padStart(2, '0');
     const prefix = `${year}-${padM}`;
     const allSess = JSON.parse(localStorage.getItem(STORAGE_KEYS.SESSIONS) || '[]');
@@ -187,6 +249,7 @@ const localApi = {
   },
   getHeatmapData: (days = 365) => {
     initLocalDataIfEmpty();
+    cleanupOrphanedSessions();
     const allSess = JSON.parse(localStorage.getItem(STORAGE_KEYS.SESSIONS) || '[]');
     const summaryMap = {};
     allSess.forEach(s => {
@@ -198,6 +261,7 @@ const localApi = {
   },
   getSummaryStats: () => {
     initLocalDataIfEmpty();
+    cleanupOrphanedSessions();
     const today = new Date().toISOString().split('T')[0];
     const allSess = JSON.parse(localStorage.getItem(STORAGE_KEYS.SESSIONS) || '[]');
     const subs = JSON.parse(localStorage.getItem(STORAGE_KEYS.SUBJECTS) || '[]');
@@ -233,7 +297,9 @@ const localApi = {
     }
 
     const subjectBreakdown = subs.map(sub => {
-      const subMonthMinutes = monthSess.filter(s => s.subject_id === sub.id).reduce((sum, s) => sum + s.duration_minutes, 0);
+      const subMonthMinutes = monthSess
+        .filter(s => String(s.subject_id) === String(sub.id))
+        .reduce((sum, s) => sum + s.duration_minutes, 0);
       return { id: sub.id, name: sub.name, color: sub.color, total_minutes: subMonthMinutes };
     }).sort((a, b) => b.total_minutes - a.total_minutes);
 
@@ -245,7 +311,7 @@ const localApi = {
       totalSessions: allSess.length,
       totalDaysStudied: datesStudied.length,
       currentStreak,
-      longestStreak: Math.max(currentStreak, 18),
+      longestStreak: Math.max(currentStreak, datesStudied.length > 0 ? 1 : 0),
       isStudiedToday,
       subjectBreakdown,
       recentSessions: allSess.slice(0, 6)
@@ -313,6 +379,7 @@ export const api = {
   createSession: (data) => request('/sessions', { method: 'POST', body: JSON.stringify(data) }, () => localApi.createSession(data)),
   updateSession: (id, data) => request(`/sessions/${id}`, { method: 'PUT', body: JSON.stringify(data) }, () => localApi.updateSession(id, data)),
   deleteSession: (id) => request(`/sessions/${id}`, { method: 'DELETE' }, () => localApi.deleteSession(id)),
+  deleteSessionsByDate: (dateStr) => request(`/sessions/date/${dateStr}`, { method: 'DELETE' }, () => localApi.deleteSessionsByDate(dateStr)),
 
   // Calendar
   getCalendarData: (year, month) => request(`/calendar?year=${year}&month=${month}`, {}, () => localApi.getCalendarData(year, month)),

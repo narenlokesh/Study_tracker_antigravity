@@ -243,6 +243,11 @@ function deleteSession(id) {
   return stmt.run(id);
 }
 
+function deleteSessionsByDate(date) {
+  const stmt = db.prepare('DELETE FROM sessions WHERE date = ?');
+  return stmt.run(date);
+}
+
 // Activity Heatmap aggregation (last N days)
 function getHeatmapData(daysBack = 365) {
   const rows = db.prepare(`
@@ -460,6 +465,7 @@ module.exports = {
   createSession,
   updateSession,
   deleteSession,
+  deleteSessionsByDate,
   getHeatmapData,
   getMonthCalendarData,
   getStatsSummary,

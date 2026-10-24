@@ -82,6 +82,18 @@ export default function App() {
     }
   };
 
+  const handleDeleteDaySessions = async (dateStr) => {
+    try {
+      await api.deleteSessionsByDate(dateStr);
+      await loadData();
+      if (selectedDay === dateStr) {
+        setSelectedDay(null);
+      }
+    } catch (err) {
+      alert(err.message || 'Failed to delete day study sessions');
+    }
+  };
+
   // Subject Handlers
   const handleCreateSubject = async (subjectData) => {
     try {
@@ -204,6 +216,7 @@ export default function App() {
             onMonthChange={setCurrentDate}
             onSelectDate={handleDaySelect}
             onQuickAddSession={openLogForDate}
+            onDeleteDay={handleDeleteDaySessions}
           />
         )}
 
@@ -260,6 +273,7 @@ export default function App() {
         onClose={() => setSelectedDay(null)}
         sessions={selectedDaySessions}
         onDeleteSession={handleDeleteSession}
+        onDeleteAllSessionsForDate={handleDeleteDaySessions}
         onAddSessionForDate={(dateStr) => {
           setSelectedDay(null);
           openLogForDate(dateStr);

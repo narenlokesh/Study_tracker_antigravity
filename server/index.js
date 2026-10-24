@@ -128,6 +128,17 @@ app.put('/api/sessions/:id', (req, res) => {
   }
 });
 
+app.delete('/api/sessions/date/:date', (req, res) => {
+  try {
+    const { date } = req.params;
+    db.deleteSessionsByDate(date);
+    res.json({ success: true, message: `All sessions deleted for ${date}` });
+  } catch (err) {
+    console.error('Error deleting sessions for date:', err);
+    res.status(500).json({ error: 'Failed to delete sessions for date' });
+  }
+});
+
 app.delete('/api/sessions/:id', (req, res) => {
   try {
     const id = Number(req.params.id);
