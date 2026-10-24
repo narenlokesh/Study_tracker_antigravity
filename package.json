@@ -5,10 +5,12 @@
   "private": true,
   "scripts": {
     "install:all": "npm install && npm --prefix server install && npm --prefix client install",
+    "build": "npm --prefix client run build",
+    "build:all": "npm run install:all && npm run build",
+    "start": "node server/index.js",
     "dev": "node start-dev.js",
     "start:server": "npm --prefix server start",
-    "start:client": "npm --prefix client dev",
-    "build": "npm --prefix client run build"
+    "start:client": "npm --prefix client dev"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"
