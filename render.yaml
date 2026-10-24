@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: study-tracker
+    runtime: node
+    plan: free
+    branch: main
+    buildCommand: npm run build:all
+    startCommand: npm start
+    envVars:
+      - key: NODE_VERSION
+        value: 22.11.0

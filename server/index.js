@@ -225,6 +225,7 @@ if (fs.existsSync(clientDist)) {
   });
 }
 
-app.listen(PORT, () => {
-  console.log(`📡 Study Tracker API server running on http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`📡 Study Tracker API server running on 0.0.0.0:${PORT}`);
+  console.log(`📂 Client static directory: ${clientDist} (exists: ${fs.existsSync(clientDist)})`);
 });

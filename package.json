@@ -3,7 +3,11 @@
   "version": "1.0.0",
   "description": "Full-stack Study & Monthly Tracker App with SQLite, React, and Express",
   "private": true,
+  "engines": {
+    "node": ">=22.5.0"
+  },
   "scripts": {
+    "postinstall": "npm --prefix server install && npm --prefix client install",
     "install:all": "npm install && npm --prefix server install && npm --prefix client install",
     "build": "npm --prefix client run build",
     "build:all": "npm run install:all && npm run build",
@@ -11,6 +15,10 @@
     "dev": "node start-dev.js",
     "start:server": "npm --prefix server start",
     "start:client": "npm --prefix client dev"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.2"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"
