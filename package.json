@@ -1,0 +1,16 @@
+{
+  "name": "study-tracker-app",
+  "version": "1.0.0",
+  "description": "Full-stack Study & Monthly Tracker App with SQLite, React, and Express",
+  "private": true,
+  "scripts": {
+    "install:all": "npm install && npm --prefix server install && npm --prefix client install",
+    "dev": "node start-dev.js",
+    "start:server": "npm --prefix server start",
+    "start:client": "npm --prefix client dev",
+    "build": "npm --prefix client run build"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
